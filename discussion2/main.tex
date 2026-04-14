@@ -1,0 +1,260 @@
+\documentclass{beamer}
+\usepackage[UTF8]{ctex}
+\usepackage{HNUBeamer}
+\usepackage{booktabs}
+\usepackage[UTF8,noindent]{ctexcap}
+\usepackage[bookmarks=true]{hyperref}
+\usepackage{amsmath,amssymb,booktabs,array}
+\usepackage{graphicx}
+\usepackage{svg}
+\usepackage{listings}
+\usepackage{ulem}
+
+% 二进制位、\texttt 等：显式等宽西文（字母与数字同宽）；用文件名以便 XeTeX 在 TEXMF 中解析
+\setmonofont{texgyrecursor-regular.otf}[
+  BoldFont=texgyrecursor-bold.otf,
+  ItalicFont=texgyrecursor-italic.otf,
+  BoldItalicFont=texgyrecursor-bolditalic.otf,
+  Scale=MatchLowercase
+]
+
+\title{第二次讨论课选题三}
+\author[姚鑫婷、唐怡、李知夏]{姚鑫婷\textsuperscript{1} \and 唐怡\textsuperscript{1} \and 李知夏\textsuperscript{1}}
+\institute{\textsuperscript{1}湖南大学\ 计算机学院}
+\date{\today}
+
+\setbeamertemplate{navigation symbols}{}
+\usebackgroundtemplate{\includegraphics[width=\paperwidth,height=\paperheight]{background.png}}
+
+\lstdefinelanguage{Rust}{
+  keywords={fn, let, mut, if, return, false, true, as, in},
+  sensitive=true,
+  comment=[l]{//},
+  morestring=[b]",
+}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{blue!75!black},
+  commentstyle=\color{gray!80!black},
+  stringstyle=\color{green!40!black},
+  showstringspaces=false,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  breaklines=true,
+  tabsize=2,
+  xleftmargin=0.5em,
+  xrightmargin=0.5em,
+  alsoletter={_}
+}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\section{相关法律}
+
+\begin{frame}
+  \begin{beamercolorbox}[sep=0.8em,rounded=true,shadow=true]{block body}
+    \small
+    违反国家规定，对计算机信息系统功能进行删除、修改、增加、干扰，造成计算机信息系统不能正常运行，后果严重的，处五年以下有期徒刑或者拘役；后果特别严重的，处五年以上有期徒刑。
+
+    \vspace{0.6em}
+
+    故意制作、传播计算机病毒等破坏性程序，影响计算机系统正常运行，后果严重的，依照第一款的规定处罚。
+  \end{beamercolorbox}
+  \vfill
+  \raggedleft\footnotesize —— 《中华人民共和国刑法》第二百八十六条
+\end{frame}
+
+\section{1. 病毒}
+
+\begin{frame}{1.\ 病毒}
+  \begin{block}{代码仓库}
+    \url{https://github.com/caiwen666/hnu-cs/discussion2/virus.c}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]{1.\ 病毒}
+  \begin{lstlisting}[language=C]
+__attribute__((constructor)) static void virus_action_fdgffdgsdhgtrhtshs() {
+    puts("Welcome to HNU CSAPP!");
+    infect_fdgffdgsdhgtrhtshs();
+}
+  \end{lstlisting}
+
+  \pause
+
+  \texttt{\_\_attribute\_\_((constructor))} 修饰的函数会在程序启动时，在 \texttt{main} 函数之前被执行。（GCC 和 Clang 特有的，貌似 MSVC 并不支持）
+\end{frame}
+
+\begin{frame}{1.\ 病毒}
+
+  注入的代码中的符号一律使用 \texttt{static} 修饰，确保内部链接性。
+
+  \pause\vspace{0.8em}
+
+  在符号的结尾加上毫无意义的字符串 \texttt{fdgffdgsdhgtrhtshs} 确保不会和已有代码产生冲突。
+\end{frame}
+
+\begin{frame}[fragile]{1.\ 病毒}
+  由于 C 语言没有 RAII，所以只好使用 \texttt{goto} 来实现：
+
+  \pause
+
+  \begin{lstlisting}[language=C]
+...
+    if (len <= 0) goto failed_with_fp;
+    char *buf = malloc((size_t)len + 1u);
+    if (!buf) goto failed_with_fp;
+    if (fseek(fp, 0, SEEK_SET) != 0) goto failed_with_buf;
+    if (fread(buf, 1, (size_t)len, fp) != (size_t)len) goto failed_with_buf;
+    buf[len] = '\0';
+    if (strstr(buf, "// VIRUS_PAYLOAD""_BEGIN_MARKER")) goto failed_with_buf;
+...
+failed_with_buf:
+    free(buf);
+failed_with_fp:
+    fclose(fp);
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{1.\ 病毒}
+  感染传播需要做到在感染文件的同时，让被感染的文件同时也携带感染别的文件的代码。
+
+  \pause\vspace{0.8em}
+
+  \begin{lstlisting}[language=C,basicstyle=\ttfamily\small,keepspaces=true]
+static const char *PAYLOAD_fdgffdgsdhgtrhtshs[] = {...}
+
+// VIRUS_PAYLOAD_BEGIN_MARKER
+...
+// VIRUS_PAYLOAD_END_MARKER
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}{1.\ 病毒}
+  \texttt{// VIRUS\_PAYLOAD\_BEGIN\_MARKER} 和 \texttt{// VIRUS\_PAYLOAD\_END\_MARKER} 之间的部分为恶意代码的主体。\texttt{PAYLOAD\_fdgffdgsdhgtrhtshs} 存储了这部分代码的字符串。
+
+  \pause\vspace{0.8em}
+
+  存储代码的字符串会带来字符的转义问题，我们的设计是把代码分成若干个段，其中转义字符单独作为一个段，这样方便后面判断。
+\end{frame}
+
+\begin{frame}{1.\ 病毒}
+  在感染时，会把 \texttt{PAYLOAD\_fdgffdgsdhgtrhtshs} 中存储的代码内容直接追加到目标代码文件的尾部。同时，为了使得目标代码文件也有感染别的文件的能力，所以需要根据 \texttt{PAYLOAD\_fdgffdgsdhgtrhtshs} 的内容，为目标代码文件也加上定义 \texttt{PAYLOAD\_fdgffdgsdhgtrhtshs} 的代码：
+\end{frame}
+
+\begin{frame}[fragile]{1.\ 病毒}
+  \begin{lstlisting}[language=C,basicstyle=\ttfamily\tiny]
+fputs("static const char *PAYLOAD_fdgffdgsdhgtrhtshs[] = {", fp);
+for (size_t i = 0; i < payload_count; ++i) {
+    const char *p = PAYLOAD_fdgffdgsdhgtrhtshs[i];
+    fputs("\"",fp);
+    if (strlen(p) == 1) { // 体现了转义字符单独作为一个段的便捷性
+        if (p[0] == '\n') fputs("\\n", fp);
+        else if (p[0] == '\t') fputs("\\t", fp);
+        else if (p[0] == '\\') fputs("\\\\", fp);
+        else if (p[0] == '\"') fputs("\\\"", fp);
+        else if (p[0] == '\'') fputs("\\\'", fp);
+        else fputc(p[0], fp);
+    } else fputs(p, fp);
+    fputs("\",",fp);
+}
+fputs("};\n\n", fp);
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}{1.\ 病毒}
+  而 \texttt{PAYLOAD\_fdgffdgsdhgtrhtshs} 的构造是通过 Python 脚本完成的，见代码仓库 \texttt{discussion2/build\_payload.py}。
+\end{frame}
+
+\section{2. 查杀病毒}
+
+\begin{frame}{2.\ 查杀病毒}
+  根据第一部分编写的病毒的特征：
+  \begin{itemize}[<+->]
+    \item 判断是否是 ELF 文件（检查魔数）
+    \item 判断文件内是否包含 \texttt{VIRUS\_PAYLOAD\_BEGIN\_MARKER}
+    \item 判断文件内是否包含 \texttt{fdgffdgsdhgtrhtshs}
+    \item 判断文件内是否包含 \texttt{Welcome to HNU CSAPP!}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{2.\ 查杀病毒}
+  \begin{block}{代码}
+    \url{https://github.com/caiwen666/hnu-cs/discussion2/src/bin/check_hnu_csapp_infection}
+  \end{block}
+  \pause
+  \begin{lstlisting}[language=Rust]
+fn contains(haystack: &[u8], needle: &[u8]) -> bool {
+    if needle.is_empty() || haystack.len() < needle.len() {
+        return false;
+    }
+    haystack.windows(needle.len()).any(|w| w == needle)
+}
+  \end{lstlisting}
+\end{frame}
+
+\section{3. 感染可执行文件}
+
+\begin{frame}{3.\ 感染可执行文件}
+  \begin{block}{思路一：修改已有的 PT\_LOAD 段}
+
+  直接在带有执行权限的 PT\_LOAD 段上面注入恶意代码，然后修改 \texttt{e\_entry} 处的地址到注入的恶意代码。在恶意代码的最后再跳到原来的正常的程序入口处。
+
+  \pause\vspace{0.6em}
+
+  但是 ELF 内的内容摆放地非常“紧密”，直接从中间插入数据的话，需要重新计算所有段的偏移，几乎是要重建整个 Program Header Table。
+
+  \end{block}
+\end{frame}
+
+\begin{frame}{3.\ 感染可执行文件}
+  这还不是最糟糕的。PT\_LOAD 段之间在虚拟内存中的排列也很“紧密”，可能带有执行权限的 PT\_LOAD 段和下一个 PT\_LOAD 段之间只有 511 字节的空隙（由于内存分页对齐），如果注入的代码超过了 511 字节，可能还需要考虑重新排布虚拟内存的布局，相当困难。
+\end{frame}
+
+\begin{frame}{3.\ 感染可执行文件}
+  \begin{block}{思路二：追加一个 PT\_LOAD 段}
+
+  直接在原来的 ELF 后面追加一个带有执行权限的 PT\_LOAD 段，这样的话注入的代码长度没有什么限制。
+
+  \pause\vspace{0.6em}
+
+  但是需要在 Program Header Table 里面添加一项，如果 Program Header Table 区域没有空闲空间的话，那么需要对 Program Header Table 扩容，类似于思路一，从中间插入数据，需要重新计算所有段的偏移。
+
+  \end{block}
+\end{frame}
+
+\begin{frame}{3.\ 感染可执行文件}
+  \begin{block}{思路三：篡改已有的段}
+
+  ELF 文件中的 PT\_NOTE 段，还有一些 PT\_GNU\_ 开头的段，似乎对程序的加载运行这件事本身没有什么影响。我们可以，比如说，直接从 ELF 文件的最后追加恶意代码，然后把一个 PT\_NOTE 段改成 PT\_LOAD 段，将文件最后的代码加载到虚拟内存中。
+
+  \pause\vspace{0.6em}
+
+  这个思路可行性比较高，但是后续还会存在一些问题。比如我们注入的代码基本用不了 C 标准库的函数，因为我们只能单纯地注入代码，对标准库进行链接比较难搞。可能需要手搓 Linux 的系统调用。
+
+  \end{block}
+\end{frame}
+
+\begin{frame}{3.\ 感染可执行文件}
+  \begin{block}{思路四：Wrapper}
+
+  把恶意代码做成一个壳子，包裹住被感染的可执行文件。运行时，先执行恶意代码，然后再把包裹住的可执行文件释放出去，再接着正常执行原来的可执行文件。
+
+  \pause\vspace{0.6em}
+
+  直觉上来说，似乎这样的病毒容易被发现。
+
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \Huge{\centerline{THANK YOU!}}
+\end{frame}
+
+\end{document}
