@@ -8,7 +8,7 @@
 
 ## 1. 病毒
 
-代码：`https://github.com/caiwen666/hnu-cs/discussion2/virus.c`
+代码：`https://github.com/caiwen666/hnu-cs/blob/main/discussion2/virus.c`
 
 ```c
 __attribute__((constructor)) static void virus_action_fdgffdgsdhgtrhtshs() {
@@ -84,7 +84,7 @@ fputs("};\n\n", fp);
 * 判断文件内是否包含 `fdgffdgsdhgtrhtshs`
 * 判断文件内是否包含 `Welcome to HNU CSAPP!`
 
-代码：`https://github.com/caiwen666/hnu-cs/discussion2/src/bin/check_hnu_csapp_infection`
+代码：`https://github.com/caiwen666/hnu-cs/blob/main/discussion2/src/bin/check_hnu_csapp_infection.rs`
 
 ```rust
 fn contains(haystack: &[u8], needle: &[u8]) -> bool {
