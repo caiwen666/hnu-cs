@@ -4,4 +4,15 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+core_affinity = "0.8"
+crossbeam-utils = "0.8.21"
+
+[target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_System_Threading"] }
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "false_sharing"
+harness = false

@@ -115,14 +115,17 @@ fn robust_bandwidth_stats(mut samples: Vec<f64>) -> RobustStats {
 }
 
 fn main() {
-    // 绑定当前线程到指定 CPU 核心，cpu id 从 0 开始
-    // 应该是和 AIDA64 上面写的一致
-    let core: u32 = 15;
-    let mask = 1usize << core;
-    use windows_sys::Win32::System::Threading::{GetCurrentThread, SetThreadAffinityMask};
-    let prev = unsafe { SetThreadAffinityMask(GetCurrentThread(), mask) };
-    if prev == 0 {
-        println!("{:#?}", std::io::Error::last_os_error());
+    #[cfg(target_os = "windows")]
+    {
+        // 绑定当前线程到指定 CPU 核心，cpu id 从 0 开始
+        // 应该是和 AIDA64 上面写的一致
+        let core: u32 = 15;
+        let mask = 1usize << core;
+        use windows_sys::Win32::System::Threading::{GetCurrentThread, SetThreadAffinityMask};
+        let prev = unsafe { SetThreadAffinityMask(GetCurrentThread(), mask) };
+        if prev == 0 {
+            println!("{:#?}", std::io::Error::last_os_error());
+        }
     }
 
     // 工作集大小
