@@ -1,4 +1,4 @@
-use std::alloc::{alloc_zeroed, Layout};
+use std::alloc::{Layout, alloc_zeroed};
 use std::hint::black_box;
 use std::time::{Duration, Instant};
 
@@ -42,7 +42,7 @@ fn median(sorted: &[f64]) -> f64 {
 }
 
 /// 取上下四分位数和中位数
-/// 
+///
 /// 返回的三个数字依次增大
 fn quartiles_hinges(sorted: &[f64]) -> (f64, f64, f64) {
     let n = sorted.len();
@@ -80,7 +80,7 @@ struct RobustStats {
 /// 计算比较符合统计学意义的数据
 fn robust_bandwidth_stats(mut samples: Vec<f64>) -> RobustStats {
     let total = samples.len();
-    
+
     let mut sorted_all = samples.clone();
     sorted_all.sort_by(|a, b| a.total_cmp(b));
     let median_all = median(&sorted_all);
@@ -160,10 +160,7 @@ fn main() {
 
     println!(
         "{:>6}  {:>8}  {:>8}  {:>10}",
-        "工作集",
-        "均值",
-        "中位数",
-        "[min,max]",
+        "工作集", "均值", "中位数", "[min,max]",
     );
     println!("{:-<72}", "");
 
@@ -202,11 +199,7 @@ fn main() {
 
         println!(
             "{size_str}  {:>8.2} GiB/s  {:>6.2}  {:>6.1}-{:<6.1} {}",
-            st.mean_inlier,
-            st.median_all,
-            st.min_raw,
-            st.max_raw,
-            outlier_note
+            st.mean_inlier, st.median_all, st.min_raw, st.max_raw, outlier_note
         );
 
         // 这里理论上要释放内存，但是我就不释放，泄露就泄露
